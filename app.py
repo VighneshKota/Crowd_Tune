@@ -372,13 +372,15 @@ def search_songs():
             })
         
         print(f"[DEBUG] Found {len(tracks)} tracks")
-        return jsonify({'tracks': tracks})
+        return jsonify({
+            'tracks': tracks,
+            'user_votes_used': get_user_vote_count(event_code, voter_id)
+        })
     
     except Exception as e:
         print(f"[ERROR] Search failed: {e}")
         return jsonify({'error': f'Search error: {str(e)}'}), 400
 
-@app.route('/api/vote', methods=['POST'])
 def get_user_vote_count(event_code, voter_id):
     """Count how many active votes a user has in an event"""
     if event_code not in votes:
