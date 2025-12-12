@@ -13,14 +13,27 @@ import uuid
 
 load_dotenv()
 
+
 app = Flask(__name__)
 CORS(app)
 app.secret_key = os.getenv('FLASK_SECRET_KEY', 'dev_secret_key_change_in_production')
 
-# Spotify Configuration
-SPOTIFY_CLIENT_ID = os.getenv('SPOTIFY_CLIENT_ID', '2397bc11194b430396b3d7f007a8ddad')
-SPOTIFY_CLIENT_SECRET = os.getenv('SPOTIFY_CLIENT_SECRET', '3a0656854be14d5e89e0e82f9fe58c21')
-SPOTIFY_REDIRECT_URI = os.getenv('SPOTIFY_REDIRECT_URI', 'http://127.0.0.1:5000/callback')
+# Spotify Configuration (production-safe)
+SPOTIFY_CLIENT_ID = os.getenv("SPOTIFY_CLIENT_ID")
+SPOTIFY_CLIENT_SECRET = os.getenv("SPOTIFY_CLIENT_SECRET")
+SPOTIFY_REDIRECT_URI = os.getenv("SPOTIFY_REDIRECT_URI")
+
+# Warn if any required variable is missing
+missing = []
+if not SPOTIFY_CLIENT_ID:
+    missing.append("SPOTIFY_CLIENT_ID")
+if not SPOTIFY_CLIENT_SECRET:
+    missing.append("SPOTIFY_CLIENT_SECRET")
+if not SPOTIFY_REDIRECT_URI:
+    missing.append("SPOTIFY_REDIRECT_URI")
+
+if missing:
+    print("WARNING: Missing environment variables:", ", ".join(missing))
 
 # In-memory storage (replace with database in production)
 events = {}
