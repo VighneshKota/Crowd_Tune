@@ -323,6 +323,18 @@ def voting_dashboard():
     
     return render_template('voting_dashboard.html')
 
+def ensure_valid_token(token_info):
+    """Check if token is expired and refresh if necessary"""
+    try:
+        sp_oauth = get_spotify_oauth()
+        if sp_oauth.is_token_expired(token_info):
+            print(f"[DEBUG] Token expired, refreshing...")
+            new_token = sp_oauth.refresh_access_token(token_info['refresh_token'])
+            return new_token
+    except Exception as e:
+        print(f"[ERROR] Token refresh failed: {e}")
+    return token_info
+
 @app.route('/api/search-songs', methods=['POST'])
 def search_songs():
     """Search Spotify songs"""
@@ -331,32 +343,51 @@ def search_songs():
         query = data.get('query')
         
         if not query:
+            print("[WARN] Search query missing")
             return jsonify({'error': 'Query is required'}), 400
         
-        sp_oauth = get_spotify_oauth()
+        print(f"[DEBUG] Processing search for: '{query}'")
+        
         event_code = session.get('event_code')
-        token_info = sp_oauth.get_cached_token()
+        token_info = None
+        source = "None"
         
-        if not token_info:
-            # Try to get from session
-            token_info = session.get('token_info')
+        # 1. Try Session Token
+        if 'token_info' in session:
+            token_info = session['token_info']
+            source = "Session"
         
+        # 2. Try Admin Token Fallback (if event exists)
         if not token_info and event_code and event_code in events:
-            # Fallback to the admin token for this event
             token_info = events[event_code].get('admin_token')
-        
+            source = "Event Admin"
+            
         if not token_info:
-            return jsonify({'error': 'Not authenticated'}), 401
+            print("[ERROR] No authentication token found in session or event")
+            return jsonify({'error': 'Not authenticated. Please join an active event.'}), 401
+            
+        # 3. Ensure Token Validity
+        token_info = ensure_valid_token(token_info)
         
-        print(f"[DEBUG] Searching for: {query}")
+        # Update session/event if refreshed
+        if source == "Session":
+            session['token_info'] = token_info
+        elif source == "Event Admin":
+            events[event_code]['admin_token'] = token_info
+
         sp = spotipy.Spotify(auth=token_info['access_token'])
+        
+        print(f"[DEBUG] Calling Spotify Search API (Source: {source})...")
         results = sp.search(q=query, type='track', limit=10)
         
         tracks = []
         voter_id = session.get('voter_id')
         event_votes = votes.get(event_code, {}) if event_code else {}
         
-        for track in results['tracks']['items']:
+        items = results.get('tracks', {}).get('items', [])
+        print(f"[DEBUG] Spotify returned {len(items)} items")
+
+        for track in items:
             vote_count = len(event_votes.get(track['id'], []))
             has_voted = voter_id in event_votes.get(track['id'], set())
             is_added = track['id'] in events[event_code].get('added_songs', set()) if event_code in events else False
@@ -371,14 +402,15 @@ def search_songs():
                 'is_added': is_added
             })
         
-        print(f"[DEBUG] Found {len(tracks)} tracks")
         return jsonify({
             'tracks': tracks,
             'user_votes_used': get_user_vote_count(event_code, voter_id)
         })
     
     except Exception as e:
-        print(f"[ERROR] Search failed: {e}")
+        print(f"[ERROR] Search failed with exception: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return jsonify({'error': f'Search error: {str(e)}'}), 400
 
 def get_user_vote_count(event_code, voter_id):
