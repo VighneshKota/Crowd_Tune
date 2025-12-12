@@ -230,7 +230,8 @@ def get_event(event_code):
         'playlist_name': event['playlist_name'],
         'threshold': event['threshold'],
         'votes': song_votes,
-        'total_voters': len(set(voter for voters in event_votes.values() for voter in voters))
+        'total_voters': len(set(voter for voters in event_votes.values() for voter in voters)),
+        'user_votes_used': get_user_vote_count(event_code, session.get('voter_id'))
     })
 
 @app.route('/api/event-current-tracks/<event_code>')
@@ -265,13 +266,7 @@ def get_event_current_tracks(event_code):
     
     voter_id = session.get('voter_id')
     result = []
-    for t in tracks_meta:
-        if not t:
-            continue
-        sid = t['id']
-        voters = event_votes.get(sid, set())
-        vote_count = len(voters) if isinstance(voters, set) else int(voters or 0)
-        has_voted = voter_id in voters if isinstance(voters, set) and voter_id else False
+        is_added = sid in events[event_code].get('added_songs', set())
         result.append({
             'id': sid,
             'name': t['name'],
@@ -279,11 +274,16 @@ def get_event_current_tracks(event_code):
             'image': (t.get('album', {}).get('images', [{}]) or [{}])[0].get('url', ''),
             'spotify_uri': t.get('uri'),
             'votes': vote_count,
-            'has_voted': has_voted
+            'has_voted': has_voted,
+            'is_added': is_added
         })
     
     result.sort(key=lambda x: x['votes'], reverse=True)
-    return jsonify({'tracks': result})
+    result.sort(key=lambda x: x['votes'], reverse=True)
+    return jsonify({
+        'tracks': result,
+        'user_votes_used': get_user_vote_count(event_code, voter_id)
+    })
 
 @app.route('/join/<event_code>')
 def join_event(event_code):
@@ -351,10 +351,7 @@ def search_songs():
         tracks = []
         voter_id = session.get('voter_id')
         event_votes = votes.get(event_code, {}) if event_code else {}
-        for track in results['tracks']['items']:
-            voters = event_votes.get(track['id'], set())
-            vote_count = len(voters) if isinstance(voters, set) else int(voters or 0)
-            has_voted = voter_id in voters if isinstance(voters, set) and voter_id else False
+            is_added = track['id'] in events[event_code].get('added_songs', set()) if event_code in events else False
             tracks.append({
                 'id': track['id'],
                 'name': track['name'],
@@ -362,7 +359,8 @@ def search_songs():
                 'image': track['album']['images'][0]['url'] if track['album']['images'] else '',
                 'spotify_uri': track['uri'],
                 'votes': vote_count,
-                'has_voted': has_voted
+                'has_voted': has_voted,
+                'is_added': is_added
             })
         
         print(f"[DEBUG] Found {len(tracks)} tracks")
@@ -371,6 +369,18 @@ def search_songs():
     except Exception as e:
         print(f"[ERROR] Search failed: {e}")
         return jsonify({'error': f'Search error: {str(e)}'}), 400
+
+@app.route('/api/vote', methods=['POST'])
+def get_user_vote_count(event_code, voter_id):
+    """Count how many active votes a user has in an event"""
+    if event_code not in votes:
+        return 0
+    
+    count = 0
+    for song_votes in votes[event_code].values():
+        if voter_id in song_votes:
+            count += 1
+    return count
 
 @app.route('/api/vote', methods=['POST'])
 def vote():
@@ -387,6 +397,15 @@ def vote():
         if not song_id or not voter_id:
             return jsonify({'error': 'Missing song or voter ID'}), 400
         
+        # Check if song is already added
+        if song_id in events[event_code].get('added_songs', set()):
+            print(f"[DEBUG] Song {song_id} already added, rejecting vote")
+            return jsonify({
+                'success': False,
+                'error': 'Song already added to playlist',
+                'is_added': True
+            })
+
         print(f"[DEBUG] Vote from {voter_id} for song {song_id} in event {event_code}")
         
         if event_code not in votes:
@@ -395,13 +414,26 @@ def vote():
         if song_id not in votes[event_code]:
             votes[event_code][song_id] = set()
         
+        # Check vote limit (Max 3)
+        user_votes = get_user_vote_count(event_code, voter_id)
+        is_removing = voter_id in votes[event_code][song_id]
+        
+        if not is_removing and user_votes >= 3:
+            return jsonify({
+                'success': False, 
+                'error': 'You have used all 3 votes!',
+                'vote_limit_reached': True
+            })
+
         # Toggle vote
-        if voter_id in votes[event_code][song_id]:
+        if is_removing:
             votes[event_code][song_id].remove(voter_id)
             action = 'removed'
+            user_votes -= 1 # Updated count
         else:
             votes[event_code][song_id].add(voter_id)
             action = 'added'
+            user_votes += 1 # Updated count
         
         vote_count = len(votes[event_code][song_id])
         threshold = events[event_code]['threshold']
@@ -435,6 +467,7 @@ def vote():
                         'success': True,
                         'action': action,
                         'vote_count': vote_count,
+                        'user_votes_used': user_votes,
                         'threshold_reached': True,
                         'message': 'Song added to playlist!'
                     })
@@ -446,6 +479,7 @@ def vote():
             'success': True,
             'action': action,
             'vote_count': vote_count,
+            'user_votes_used': user_votes,
             'threshold_reached': False
         })
     

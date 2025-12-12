@@ -48,8 +48,8 @@
                     <div class="info-label">Total Voters</div>
                 </div>
                 <div class="info-box">
-                    <div class="info-value" id="threshold">-</div>
-                    <div class="info-label">Threshold</div>
+                    <div class="info-value" id="votesRemaining">3</div>
+                    <div class="info-label">Votes Left</div>
                 </div>
             </div>
         </div>
@@ -79,7 +79,10 @@
         const eventCode = new URLSearchParams(window.location.search).get('code') || document.location.pathname.split('/').pop();
         document.getElementById('eventCode').textContent = eventCode;
 
-        let votedSongs = new Set();
+        function updateVotesRemaining(used) {
+            const remaining = Math.max(0, 3 - (used || 0));
+            document.getElementById('votesRemaining').textContent = remaining;
+        }
 
         function loadEventInfo() {
             fetch(`/api/event/${eventCode}`)
@@ -87,6 +90,8 @@
                 .then(data => {
                     document.getElementById('threshold').textContent = data.threshold;
                     document.getElementById('totalVoters').textContent = data.total_voters;
+                    updateVotesRemaining(data.user_votes_used);
+
                     const votes = data.votes || {};
                     Object.entries(votes).forEach(([songId, count]) => {
                         document.querySelectorAll(`.vote-count-num[data-song-id="${songId}"]`).forEach(el => {
@@ -116,7 +121,12 @@
         function loadCurrentTracks() {
             fetch(`/api/event-current-tracks/${eventCode}`)
                 .then(r => r.json())
-                .then(data => displayCurrentTracks(data.tracks || []))
+                .then(data => {
+                    displayCurrentTracks(data.tracks || []);
+                    if (data.user_votes_used !== undefined) {
+                        updateVotesRemaining(data.user_votes_used);
+                    }
+                })
                 .catch(e => console.error('Error:', e));
         }
 
@@ -139,7 +149,7 @@
 
                 const voteCount = track.votes || 0;
                 const threshold = parseInt(document.getElementById('threshold').textContent) || 5;
-                const isThresholdReached = voteCount >= threshold;
+                const isThresholdReached = voteCount >= threshold || (track.is_added === true);
 
                 trackDiv.innerHTML = `
                     <img src="${track.image}" alt="${track.name}" class="track-image">
@@ -153,8 +163,11 @@
                     <div class="vote-count">
                         <span class="vote-count-num" data-song-id="${track.id}">${voteCount}</span> votes
                     </div>
-                    <button class="btn vote-btn-small ${track.has_voted ? 'voted' : ''}" data-song-id="${track.id}" onclick="voteSong('${track.id}')">
-                        ${track.has_voted ? 'Voted' : 'Vote'}
+                    <button class="btn vote-btn-small ${track.has_voted ? 'voted' : ''}" 
+                            data-song-id="${track.id}" 
+                            onclick="voteSong('${track.id}')"
+                            ${isThresholdReached ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : ''}>
+                        ${isThresholdReached ? 'Added' : (track.has_voted ? 'Voted' : 'Vote')}
                     </button>
                 `;
 
@@ -174,6 +187,9 @@
                 .then(r => r.json())
                 .then(data => {
                     displayTracks(data.tracks);
+                    if (data.user_votes_used !== undefined) {
+                        updateVotesRemaining(data.user_votes_used);
+                    }
                 })
                 .catch(e => console.error('Error:', e));
         }
@@ -197,7 +213,7 @@
 
                 const voteCount = track.votes || 0;
                 const threshold = parseInt(document.getElementById('threshold').textContent) || 5;
-                const isThresholdReached = voteCount >= threshold;
+                const isThresholdReached = voteCount >= threshold || (track.is_added === true);
 
                 trackDiv.innerHTML = `
                     <img src="${track.image}" alt="${track.name}" class="track-image">
@@ -211,8 +227,11 @@
                     <div class="vote-count">
                         <span class="vote-count-num" data-song-id="${track.id}">${voteCount}</span> votes
                     </div>
-                    <button class="btn vote-btn-small ${track.has_voted ? 'voted' : ''}" data-song-id="${track.id}" onclick="voteSong('${track.id}')">
-                        ${track.has_voted ? 'Voted' : 'Vote'}
+                    <button class="btn vote-btn-small ${track.has_voted ? 'voted' : ''}" 
+                            data-song-id="${track.id}" 
+                            onclick="voteSong('${track.id}')"
+                            ${isThresholdReached ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : ''}>
+                        ${isThresholdReached ? 'Added' : (track.has_voted ? 'Voted' : 'Vote')}
                     </button>
                 `;
 
@@ -231,7 +250,21 @@
             })
                 .then(r => r.json())
                 .then(data => {
+                    if (data.success === false) {
+                        if (data.is_added) {
+                            alert('This song has already been added to the playlist!');
+                            loadCurrentTracks();
+                        } else if (data.vote_limit_reached) {
+                            alert('You have reached the limit of 3 votes per event!');
+                        }
+                        return;
+                    }
+
                     if (data.success) {
+                        if (data.user_votes_used !== undefined) {
+                            updateVotesRemaining(data.user_votes_used);
+                        }
+
                         document.querySelectorAll(`.vote-count-num[data-song-id="${songId}"]`).forEach(el => {
                             el.textContent = data.vote_count;
                         });
@@ -256,8 +289,14 @@
                                     const nameEl = info.querySelector('.track-name');
                                     if (nameEl) nameEl.appendChild(m);
                                 }
+                                const btn = trackDiv.querySelector('button');
+                                if (btn) {
+                                    btn.disabled = true;
+                                    btn.style.opacity = '0.5';
+                                    btn.style.cursor = 'not-allowed';
+                                    btn.textContent = 'Added';
+                                }
                             });
-                            // Optional: alert('🎵 ' + data.message);
                         }
 
                         loadEventInfo();
