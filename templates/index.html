@@ -1,99 +1,35 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Crowdsourced Music Curator</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #121212;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .container {
-            background: #181818;
-            border-radius: 20px;
-            padding: 60px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.7);
-            max-width: 600px;
-            text-align: center;
-        }
-        h1 {
-            color: #1db954;
-            font-size: 2.5em;
-            margin-bottom: 20px;
-            letter-spacing: 2px;
-        }
-        p {
-            color: #b3b3b3;
-            font-size: 1.1em;
-            margin-bottom: 40px;
-            line-height: 1.6;
-        }
-        .button-group { display: flex; gap: 20px; flex-direction: column; }
-        button {
-            padding: 15px 40px;
-            font-size: 1.1em;
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            transition: 0.3s;
-            font-weight: bold;
-        }
-        .btn-admin {
-            background: #1db954;
-            color: #121212;
-        }
-        .btn-admin:hover {
-            background: #1ed760;
-        }
-        .btn-join {
-            background: #222;
-            color: #1db954;
-            border: 2px solid #1db954;
-        }
-        .btn-join:hover {
-            background: #1db954;
-            color: #121212;
-        }
-        .join-section {
-            margin-top: 40px;
-            border-top: 1px solid #282828;
-            padding-top: 40px;
-        }
-        input {
-            width: 100%;
-            padding: 12px;
-            font-size: 1em;
-            border: 2px solid #282828;
-            border-radius: 8px;
-            margin-bottom: 10px;
-            background: #222;
-            color: #fff;
-        }
-        input:focus {
-            outline: none;
-            border-color: #1db954;
-        }
-    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
+
 <body>
-    <div class="container">
-        <h1>🎵 Music Curator</h1>
-        <p>Host a collaborative music experience where your audience votes for songs to add to your Spotify playlist!</p>
-        
-        <div class="button-group">
-            <button class="btn-admin" onclick="window.location.href='/admin/login'">Host Event (Admin)</button>
-        </div>
-        
-        <div class="join-section">
-            <h3 style="margin-bottom: 15px; color: #333;">Join Event</h3>
-            <input type="text" id="eventCode" placeholder="Enter Event Code" style="text-transform: uppercase;">
-            <button class="btn-join" onclick="joinEvent()">Join</button>
+    <div class="container" style="text-align: center; margin-top: 10vh;">
+        <h1 style="font-size: 3.5rem; margin-bottom: 0.5rem;">🎵 Music Curator</h1>
+        <p style="color: var(--text-secondary); margin-bottom: 3rem; font-size: 1.2rem;">
+            Host a collaborative music experience where your audience votes for songs to add to your Spotify playlist!
+        </p>
+
+        <div class="card-container" style="max-width: 500px; margin: 0 auto;">
+            <div style="margin-bottom: 40px;">
+                <button onclick="window.location.href='/admin/login'" style="width: 100%;">
+                    Host Event (Log in with Spotify)
+                </button>
+            </div>
+
+            <div style="border-top: 1px solid #333; padding-top: 30px;">
+                <h3 style="margin-bottom: 20px;">Join an Event</h3>
+                <div class="form-group">
+                    <input type="text" id="eventCode" placeholder="ENTER EVENT CODE"
+                        style="text-transform: uppercase; text-align: center; letter-spacing: 2px;">
+                </div>
+                <button class="btn-secondary" onclick="joinEvent()" style="width: 100%;">Join Party</button>
+            </div>
         </div>
     </div>
 
@@ -107,9 +43,10 @@
             }
         }
 
-        document.getElementById('eventCode').addEventListener('keypress', function(e) {
+        document.getElementById('eventCode').addEventListener('keypress', function (e) {
             if (e.key === 'Enter') joinEvent();
         });
     </script>
 </body>
+
 </html>

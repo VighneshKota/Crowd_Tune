@@ -15,6 +15,10 @@ load_dotenv()
 
 
 app = Flask(__name__)
+# Fix for Render/Heroku proxy to ensure correct URL generation (https vs http)
+from werkzeug.middleware.proxy_fix import ProxyFix
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
+
 CORS(app)
 app.secret_key = os.getenv('FLASK_SECRET_KEY', 'dev_secret_key_change_in_production')
 
@@ -53,7 +57,10 @@ def generate_qr_code(event_code):
     """Generate QR code for event"""
     try:
         qr = qrcode.QRCode(version=1, box_size=10, border=5)
-        qr.add_data(f'http://127.0.0.1:5000/join/{event_code}')
+        # Use external URL for QR code
+        join_url = url_for('join_event', event_code=event_code, _external=True)
+        print(f"[DEBUG] Generating QR for URL: {join_url}")
+        qr.add_data(join_url)
         qr.make(fit=True)
         
         img = qr.make_image(fill_color="black", back_color="white")

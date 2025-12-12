@@ -1,169 +1,83 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #121212;
-            padding: 20px;
-            min-height: 100vh;
-        }
-        .container {
-            max-width: 1000px;
-            margin: 0 auto;
-            background: #181818;
-            border-radius: 15px;
-            padding: 40px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.7);
-        }
-        h1 {
-            color: #1db954;
-            margin-bottom: 30px;
-            text-align: center;
-            letter-spacing: 2px;
-        }
-        .form-group { margin-bottom: 20px; }
-        label { display: block; margin-bottom: 8px; color: #b3b3b3; font-weight: bold; }
-        input, select {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #282828;
-            background: #222;
-            color: #fff;
-            border-radius: 8px;
-            font-size: 1em;
-        }
-        input:focus, select:focus {
-            outline: none;
-            border-color: #1db954;
-        }
-        button {
-            background: #1db954;
-            color: #121212;
-            padding: 12px 30px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 1em;
-            font-weight: bold;
-            transition: 0.3s;
-            box-shadow: 0 2px 8px rgba(30,185,84,0.15);
-        }
-        button:hover {
-            background: #1ed760;
-            color: #121212;
-        }
-        .event-details {
-            background: #232323;
-            padding: 25px;
-            border-radius: 10px;
-            margin-top: 30px;
-        }
-        .event-details h2 {
-            color: #fff;
-            margin-bottom: 15px;
-        }
-        .qr-code { text-align: center; margin-top: 20px; }
-        .qr-code img {
-            width: 200px;
-            height: 200px;
-            border: 3px solid #1db954;
-            border-radius: 10px;
-            background: #fff;
-        }
-        .event-code {
-            background: #1db954;
-            color: #121212;
-            padding: 15px;
-            border-radius: 8px;
-            font-size: 1.3em;
-            font-weight: bold;
-            text-align: center;
-            margin-bottom: 15px;
-            letter-spacing: 2px;
-        }
-        .stats {
+        .stats-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin-top: 15px;
+            gap: 1rem;
+            margin-top: 1rem;
         }
+
         .stat-box {
-            background: #181818;
-            padding: 15px;
-            border-radius: 8px;
+            background-color: var(--bg-card);
+            padding: 1rem;
+            border-radius: 4px;
             text-align: center;
-            border: 1px solid #282828;
         }
-        .stat-label { color: #b3b3b3; font-size: 0.9em; }
-        .stat-value { color: #1db954; font-size: 1.8em; font-weight: bold; }
-        .hidden { display: none; }
-        .success {
-            background: #1db95422;
-            border: 1px solid #1db954;
-            color: #1db954;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 15px;
+
+        .stat-value {
+            font-size: 1.5rem;
+            color: var(--primary-green);
+            font-weight: 700;
         }
-        .error {
-            background: #d32f2f22;
-            border: 1px solid #d32f2f;
-            color: #ff5252;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 15px;
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
         }
     </style>
 </head>
+
 <body>
     <div class="container">
-        <h1>Music Curator - Admin Dashboard</h1>
+        <h1>Admin Dashboard</h1>
 
-        <div id="eventForm">
-            <h2 style="margin-bottom: 20px;">Create Event</h2>
-            
-            <div id="errorMessage" class="error hidden"></div>
-            
+        <div id="eventForm" class="card-container">
+            <h2>Create Event</h2>
+
+            <div id="errorMessage" class="error-message"></div>
+
             <div class="form-group">
-                <label for="playlistName">Playlist Name:</label>
+                <label for="playlistName">Playlist Name</label>
                 <input type="text" id="playlistName" placeholder="e.g., Party Hits 2024" required>
             </div>
 
             <div class="form-group">
-                <label for="threshold">Vote Threshold (votes needed to add song):</label>
+                <label for="threshold">Vote Threshold</label>
                 <input type="number" id="threshold" value="5" min="1" max="100" required>
+                <small style="color: var(--text-secondary); display: block; margin-top: 5px;">Votes needed to add a
+                    song</small>
             </div>
 
-            <button type="button" onclick="handleCreateEvent()">Create Event</button>
+            <button type="button" onclick="handleCreateEvent()" style="width: 100%;">Create Event</button>
         </div>
 
-        <div id="eventDetails" class="hidden">
-            <div class="success">✓ Event created successfully!</div>
-            
+        <div id="eventDetails" class="card-container" style="display: none;">
+            <div class="success-message">✓ Event created successfully!</div>
+
             <div class="event-code" id="codeDisplay"></div>
-            
-            <div class="event-details">
-                <h2>Share with Audience</h2>
-                <p style="color: #666; margin-bottom: 20px;">Share the event code or QR code below</p>
-                <div class="qr-code">
-                    <img id="qrCode" src="/placeholder.svg" alt="QR Code">
-                </div>
-                
-                <div style="margin-top: 20px;">
-                    <h3 style="margin-bottom: 15px;">Event Statistics</h3>
-                    <div class="stats">
+
+            <div>
+                <h3 style="text-align: center;">Share with Audience</h3>
+                <p style="color: var(--text-secondary); text-align: center; margin-bottom: 20px;">Scan to join</p>
+                <img id="qrCode" src="/placeholder.svg" alt="QR Code" class="qr-code-img">
+
+                <div style="margin-top: 30px;">
+                    <h3>Event Statistics</h3>
+                    <div class="stats-grid">
                         <div class="stat-box">
-                            <div class="stat-label">Playlist Name</div>
-                            <div id="statsPlaylist" class="stat-value" style="font-size: 1.2em;"></div>
+                            <div class="stat-value" id="statsPlaylist"></div>
+                            <div class="stat-label">Playlist</div>
                         </div>
                         <div class="stat-box">
+                            <div class="stat-value" id="statsThreshold"></div>
                             <div class="stat-label">Threshold</div>
-                            <div id="statsThreshold" class="stat-value"></div>
                         </div>
                     </div>
                 </div>
@@ -179,12 +93,12 @@
             const errorDiv = document.getElementById('errorMessage');
 
             // Clear previous errors
-            errorDiv.classList.add('hidden');
+            errorDiv.classList.remove('visible');
             errorDiv.textContent = '';
 
             if (!playlistName) {
                 errorDiv.textContent = 'Please enter a playlist name';
-                errorDiv.classList.remove('hidden');
+                errorDiv.classList.add('visible');
                 return;
             }
 
@@ -198,37 +112,38 @@
                     threshold: threshold
                 })
             })
-            .then(r => {
-                console.log('[v0] Response status:', r.status);
-                return r.json();
-            })
-            .then(data => {
-                console.log('[v0] Response data:', data);
-                if (data.qr_code) {
-                    console.log('[v0] QR code base64 length:', data.qr_code.length);
-                    // Optionally, log a small part of the string for inspection
-                    console.log('[v0] QR code base64 preview:', data.qr_code.substring(0, 50));
-                } else {
-                    console.warn('[v0] No QR code received!');
-                }
-                if (data.success) {
-                    document.getElementById('eventForm').classList.add('hidden');
-                    document.getElementById('eventDetails').classList.remove('hidden');
-                    document.getElementById('codeDisplay').textContent = data.event_code;
-                    document.getElementById('qrCode').src = 'data:image/png;base64,' + data.qr_code;
-                    document.getElementById('statsPlaylist').textContent = data.playlist_name;
-                    document.getElementById('statsThreshold').textContent = data.threshold + ' votes';
-                } else {
-                    errorDiv.textContent = 'Error: ' + (data.error || 'Unknown error');
-                    errorDiv.classList.remove('hidden');
-                }
-            })
-            .catch(e => {
-                console.error('[v0] Fetch error:', e);
-                errorDiv.textContent = 'Error: ' + e.message;
-                errorDiv.classList.remove('hidden');
-            });
+                .then(r => {
+                    console.log('[v0] Response status:', r.status);
+                    return r.json();
+                })
+                .then(data => {
+                    console.log('[v0] Response data:', data);
+                    if (data.qr_code) {
+                        console.log('[v0] QR code base64 length:', data.qr_code.length);
+                        // Optionally, log a small part of the string for inspection
+                        console.log('[v0] QR code base64 preview:', data.qr_code.substring(0, 50));
+                    } else {
+                        console.warn('[v0] No QR code received!');
+                    }
+                    if (data.success) {
+                        document.getElementById('eventForm').style.display = 'none';
+                        document.getElementById('eventDetails').style.display = 'block';
+                        document.getElementById('codeDisplay').textContent = data.event_code;
+                        document.getElementById('qrCode').src = 'data:image/png;base64,' + data.qr_code;
+                        document.getElementById('statsPlaylist').textContent = data.playlist_name;
+                        document.getElementById('statsThreshold').textContent = data.threshold + ' votes';
+                    } else {
+                        errorDiv.textContent = 'Error: ' + (data.error || 'Unknown error');
+                        errorDiv.classList.add('visible');
+                    }
+                })
+                .catch(e => {
+                    console.error('[v0] Fetch error:', e);
+                    errorDiv.textContent = 'Error: ' + e.message;
+                    errorDiv.classList.add('visible');
+                });
         }
     </script>
 </body>
+
 </html>
