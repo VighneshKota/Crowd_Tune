@@ -266,6 +266,10 @@ def get_event_current_tracks(event_code):
     
     voter_id = session.get('voter_id')
     result = []
+    for t in tracks_meta:
+        sid = t['id']
+        vote_count = len(event_votes.get(sid, []))
+        has_voted = voter_id in event_votes.get(sid, set())
         is_added = sid in events[event_code].get('added_songs', set())
         result.append({
             'id': sid,
@@ -351,6 +355,10 @@ def search_songs():
         tracks = []
         voter_id = session.get('voter_id')
         event_votes = votes.get(event_code, {}) if event_code else {}
+        
+        for track in results['tracks']['items']:
+            vote_count = len(event_votes.get(track['id'], []))
+            has_voted = voter_id in event_votes.get(track['id'], set())
             is_added = track['id'] in events[event_code].get('added_songs', set()) if event_code in events else False
             tracks.append({
                 'id': track['id'],
