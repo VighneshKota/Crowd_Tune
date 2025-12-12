@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voting Dashboard</title>
+    <style>
+                html, body, div, span, applet, object, iframe,
+                h1, h2, h3, h4, h5, h6, p, blockquote, pre,
+                a, abbr, acronym, address, big, cite, code,
+                del, dfn, em, img, ins, kbd, q, s, samp,
+                small, strike, strong, sub, sup, tt, var,
+                b, u, i, center,
+                dl, dt, dd, ol, ul, li,
+                fieldset, form, label, legend,
+                table, caption, tbody, tfoot, thead, tr, th, td,
+                article, aside, canvas, details, embed, 
+                figure, figcaption, footer, header, hgroup, 
+                menu, nav, output, ruby, section, summary,
+                time, mark, audio, video {
+                    color: #fff !important;
+                }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #121212;
+            min-height: 100vh;
+            padding: 20px;
+            color: #fff;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: #181818;
+            border-radius: 18px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.45);
+            padding: 32px 24px 48px 24px;
+        }
+        .header {
+            background: #232323;
+            border-radius: 15px;
+            padding: 32px 24px;
+            margin-bottom: 32px;
+            box-shadow: 0 6px 24px rgba(30,185,84,0.08);
+        }
+        h1 {
+            color: #1db954;
+            margin-bottom: 10px;
+            letter-spacing: 2px;
+            font-size: 2.5em;
+            font-weight: 900;
+        }
+        h2, h3, h4, h5, h6 {
+            color: #1db954;
+            margin-bottom: 12px;
+            font-weight: 700;
+        }
+        h2, h3, h4, h5, h6 {
+            color: #fff;
+        }
+        .event-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 18px;
+            margin-top: 18px;
+        }
+        .info-box {
+            background: #181818;
+            padding: 18px 10px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(30,185,84,0.07);
+        }
+        .info-label { color: #b3b3b3 !important; font-size: 1em; margin-bottom: 5px; }
+        .info-value { color: #1db954 !important; font-size: 1.4em; font-weight: bold; }
+        .search-section {
+            background: #232323;
+            border-radius: 15px;
+            padding: 28px 18px;
+            margin-bottom: 32px;
+            box-shadow: 0 2px 8px rgba(30,185,84,0.07);
+        }
+        .search-box { display: flex; gap: 10px; margin-bottom: 20px; }
+        input {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #282828;
+            border-radius: 8px;
+            font-size: 1em;
+            background: #222;
+            color: #fff;
+            font-weight: 500;
+        }
+        input:focus {
+            outline: none;
+            border-color: #1db954;
+        }
+        button {
+            background: #1db954;
+            color: #121212;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.3s;
+            box-shadow: 0 2px 8px rgba(30,185,84,0.15);
+        }
+        button:hover {
+            background: #1ed760;
+            color: #121212;
+        }
+        .tracks-list { display: grid; gap: 18px; }
+        .track-item {
+            background: #181818;
+            border-radius: 14px;
+            padding: 18px;
+            display: flex;
+            gap: 18px;
+            align-items: center;
+            box-shadow: 0 5px 15px rgba(30,185,84,0.10);
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .track-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(30,185,84,0.18);
+        }
+        .track-image { width: 80px; height: 80px; border-radius: 10px; object-fit: cover; }
+        .track-info { flex: 1; }
+        .track-name { color: #fff; font-weight: bold; font-size: 1.1em; margin-bottom: 5px; }
+        .track-artist { color: #b3b3b3; font-size: 0.95em; }
+        .vote-button {
+            background: #1db954;
+            color: #121212;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 2px 8px rgba(30,185,84,0.15);
+        }
+        .vote-button.voted { background: #28a745; color: #fff; }
+        .vote-count {
+            background: #232323;
+            padding: 8px 12px;
+            border-radius: 8px;
+            text-align: center;
+            min-width: 50px;
+            font-size: 1.1em;
+        }
+        .vote-num { color: #1db954; font-weight: bold; font-size: 1.2em; }
+        .vote-label { color: #b3b3b3; font-size: 0.8em; }
+        .threshold-reached { background: #1db95422; border-left: 4px solid #1db954; }
+        .threshold-msg { color: #1db954; font-weight: bold; margin-top: 8px; }
+        .no-results { background: #181818; border-radius: 12px; padding: 40px; text-align: center; color: #b3b3b3; }
+        .hidden { display: none; }
+        /* Ensure all text is visible */
+        .info-box, .search-section, .track-item, .vote-count, .stat-label, .stat-value, .threshold-reached, .no-results {
+            color: #fff;
+        }
+        /* Spotify green for highlights */
+        .info-value, .stat-value, .vote-num, .threshold-msg {
+            color: #1db954;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎵 Vote for Songs</h1>
+            <div class="event-info">
+                <div class="info-box">
+                    <div class="info-label">Event Code</div>
+                    <div class="info-value" id="eventCode"></div>
+                </div>
+                <div class="info-box">
+                    <div class="info-label">Total Voters</div>
+                    <div class="info-value" id="totalVoters">0</div>
+                </div>
+                <div class="info-box">
+                    <div class="info-label">Threshold</div>
+                    <div class="info-value" id="threshold">-</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="search-section">
+            <h2 style="margin-bottom: 15px; color: #333;">Search & Vote</h2>
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="Search for songs, artists..." >
+                <button onclick="searchSongs()">Search</button>
+            </div>
+            <div class="tracks-list" id="tracksList"></div>
+            <div id="noResults" class="no-results hidden">No tracks found</div>
+        </div>
+
+        <div class="search-section">
+            <h2 style="margin-bottom: 15px; color: #333;">Currently Voting</h2>
+            <div class="tracks-list" id="currentTracksList"></div>
+            <div id="noCurrent" class="no-results hidden">No current votes yet</div>
+        </div>
+    </div>
+
+    <script>
+        const eventCode = new URLSearchParams(window.location.search).get('code') || document.location.pathname.split('/').pop();
+        document.getElementById('eventCode').textContent = eventCode;
+
+        let votedSongs = new Set();
+
+        function loadEventInfo() {
+            fetch(`/api/event/${eventCode}`)
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('threshold').textContent = data.threshold;
+                    document.getElementById('totalVoters').textContent = data.total_voters;
+                    const votes = data.votes || {};
+                    Object.entries(votes).forEach(([songId, count]) => {
+                        document.querySelectorAll(`.vote-num[data-song-id="${songId}"]`).forEach(el => {
+                            el.textContent = count;
+                        });
+                        document.querySelectorAll(`.track-item[data-song-id="${songId}"]`).forEach(trackDiv => {
+                            const threshold = parseInt(document.getElementById('threshold').textContent) || 5;
+                            if (count >= threshold) {
+                                trackDiv.classList.add('threshold-reached');
+                                const info = trackDiv.querySelector('.track-info');
+                                if (info && !info.querySelector('.threshold-msg')) {
+                                    const m = document.createElement('div');
+                                    m.className = 'threshold-msg';
+                                    m.textContent = '✓ Added to playlist!';
+                                    info.appendChild(m);
+                                }
+                            }
+                        });
+                    });
+                })
+                .catch(e => console.error('Error:', e));
+        }
+
+        function loadCurrentTracks() {
+            fetch(`/api/event-current-tracks/${eventCode}`)
+                .then(r => r.json())
+                .then(data => displayCurrentTracks(data.tracks || []))
+                .catch(e => console.error('Error:', e));
+        }
+
+        function displayCurrentTracks(tracks) {
+            const container = document.getElementById('currentTracksList');
+            container.innerHTML = '';
+
+            if (tracks.length === 0) {
+                document.getElementById('noCurrent').classList.remove('hidden');
+                return;
+            }
+
+            document.getElementById('noCurrent').classList.add('hidden');
+
+            tracks.forEach(track => {
+                const trackDiv = document.createElement('div');
+                trackDiv.className = 'track-item';
+                trackDiv.id = 'track-c-' + track.id;
+                trackDiv.setAttribute('data-song-id', track.id);
+
+                const voteCount = track.votes || 0;
+                const threshold = parseInt(document.getElementById('threshold').textContent) || 5;
+                const isThresholdReached = voteCount >= threshold;
+
+                if (isThresholdReached) {
+                    trackDiv.classList.add('threshold-reached');
+                }
+
+                trackDiv.innerHTML = `
+                    <img src="${track.image}" alt="${track.name}" class="track-image">
+                    <div class="track-info">
+                        <div class="track-name">${track.name}</div>
+                        <div class="track-artist">${track.artist}</div>
+                        ${isThresholdReached ? '<div class="threshold-msg">✓ Added to playlist!</div>' : ''}
+                    </div>
+                    <div class="vote-count">
+                        <div class="vote-num" data-song-id="${track.id}" id="votes-c-${track.id}">${voteCount}</div>
+                        <div class="vote-label">votes</div>
+                    </div>
+                    <button class="vote-button ${track.has_voted ? 'voted' : ''}" data-song-id="${track.id}" onclick="voteSong('${track.id}')">${track.has_voted ? 'Voted' : 'Vote'}</button>
+                `;
+
+                container.appendChild(trackDiv);
+            });
+        }
+
+        function searchSongs() {
+            const query = document.getElementById('searchInput').value;
+            if (!query) return;
+
+            fetch('/api/search-songs', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ query: query })
+            })
+            .then(r => r.json())
+            .then(data => {
+                displayTracks(data.tracks);
+            })
+            .catch(e => console.error('Error:', e));
+        }
+
+        function displayTracks(tracks) {
+            const container = document.getElementById('tracksList');
+            container.innerHTML = '';
+
+            if (tracks.length === 0) {
+                document.getElementById('noResults').classList.remove('hidden');
+                return;
+            }
+
+            document.getElementById('noResults').classList.add('hidden');
+
+            tracks.forEach(track => {
+                const trackDiv = document.createElement('div');
+                trackDiv.className = 'track-item';
+                trackDiv.id = 'track-s-' + track.id;
+                trackDiv.setAttribute('data-song-id', track.id);
+
+                const voteCount = track.votes || 0;
+                const threshold = parseInt(document.getElementById('threshold').textContent) || 5;
+                const isThresholdReached = voteCount >= threshold;
+
+                if (isThresholdReached) {
+                    trackDiv.classList.add('threshold-reached');
+                }
+
+                trackDiv.innerHTML = `
+                    <img src="${track.image}" alt="${track.name}" class="track-image">
+                    <div class="track-info">
+                        <div class="track-name">${track.name}</div>
+                        <div class="track-artist">${track.artist}</div>
+                        ${isThresholdReached ? '<div class="threshold-msg">✓ Added to playlist!</div>' : ''}
+                    </div>
+                    <div class="vote-count">
+                        <div class="vote-num" data-song-id="${track.id}" id="votes-s-${track.id}">${voteCount}</div>
+                        <div class="vote-label">votes</div>
+                    </div>
+                    <button class="vote-button ${track.has_voted ? 'voted' : ''}" data-song-id="${track.id}" onclick="voteSong('${track.id}')">${track.has_voted ? 'Voted' : 'Vote'}</button>
+                `;
+
+                container.appendChild(trackDiv);
+            });
+        }
+
+        function voteSong(songId) {
+            fetch('/api/vote', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    event_code: eventCode,
+                    song_id: songId
+                })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    document.querySelectorAll(`.vote-num[data-song-id="${songId}"]`).forEach(el => {
+                        el.textContent = data.vote_count;
+                    });
+
+                    document.querySelectorAll(`.vote-button[data-song-id="${songId}"]`).forEach(btn => {
+                        if (data.action === 'added') {
+                            btn.classList.add('voted');
+                            btn.textContent = 'Voted';
+                        } else {
+                            btn.classList.remove('voted');
+                            btn.textContent = 'Vote';
+                        }
+                    });
+
+                    if (data.threshold_reached) {
+                        document.querySelectorAll(`.track-item[data-song-id="${songId}"]`).forEach(trackDiv => {
+                            trackDiv.classList.add('threshold-reached');
+                            const info = trackDiv.querySelector('.track-info');
+                            if (info && !info.querySelector('.threshold-msg')) {
+                                const m = document.createElement('div');
+                                m.className = 'threshold-msg';
+                                m.textContent = '✓ Added to playlist!';
+                                info.appendChild(m);
+                            }
+                        });
+                        alert('🎵 ' + data.message);
+                    }
+
+                    loadEventInfo();
+                    loadCurrentTracks();
+                }
+            })
+            .catch(e => console.error('Error:', e));
+        }
+
+        document.getElementById('searchInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') searchSongs();
+        });
+
+        // Refresh every 2 seconds
+        setInterval(() => { loadEventInfo(); loadCurrentTracks(); }, 2000);
+
+        // Load initial info
+        loadEventInfo();
+        loadCurrentTracks();
+    </script>
+</body>
+</html>
