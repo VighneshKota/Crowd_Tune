@@ -186,7 +186,11 @@
             })
                 .then(r => r.json())
                 .then(data => {
-                    displayTracks(data.tracks);
+                    if (data.error) {
+                        alert('Search failed: ' + data.error);
+                        return;
+                    }
+                    displayTracks(data.tracks || []);
                     if (data.user_votes_used !== undefined) {
                         updateVotesRemaining(data.user_votes_used);
                     }
