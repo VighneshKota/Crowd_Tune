@@ -407,6 +407,9 @@ def search_songs():
             'user_votes_used': get_user_vote_count(event_code, voter_id)
         })
     
+    except spotipy.exceptions.SpotifyException as se:
+        print(f"[ERROR] Spotify API Error: {se}")
+        return jsonify({'error': f"Spotify Error: {se.msg}"}), 400
     except Exception as e:
         print(f"[ERROR] Search failed with exception: {str(e)}")
         import traceback
@@ -555,5 +558,6 @@ def get_event_stats(event_code):
     })
 
 if __name__ == '__main__':
-    print("[DEBUG] Starting Flask app on http://127.0.0.1:5000")
-    app.run(debug=True, host='127.0.0.1', port=5000)
+    # Use 0.0.0.0 to be accessible from other devices in the network
+    print("[DEBUG] Starting Flask app on http://0.0.0.0:5000")
+    app.run(debug=True, host='0.0.0.0', port=5000)

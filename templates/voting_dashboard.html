@@ -60,9 +60,15 @@
                 <input type="text" id="searchInput" placeholder="Search for songs, artists...">
                 <button onclick="searchSongs()" class="btn">Search</button>
             </div>
+            <div id="searchError" class="error-message"
+                style="display: none; color: #ff6b6b; text-align: center; margin-bottom: 1rem;"></div>
+            <div id="searchLoading" class="error-message"
+                style="display: none; color: var(--text-secondary); text-align: center; margin-bottom: 1rem;">
+                Searching...</div>
             <div class="track-list" id="tracksList"></div>
             <div id="noResults" class="error-message"
-                style="background-color: transparent; color: var(--text-secondary); text-align: center;">No tracks found
+                style="display: none; background-color: transparent; color: var(--text-secondary); text-align: center;">
+                No tracks found
             </div>
         </div>
 
@@ -179,6 +185,11 @@
             const query = document.getElementById('searchInput').value;
             if (!query) return;
 
+            document.getElementById('searchError').style.display = 'none';
+            document.getElementById('noResults').style.display = 'none';
+            document.getElementById('searchLoading').style.display = 'block';
+            document.getElementById('tracksList').innerHTML = '';
+
             fetch('/api/search-songs', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -186,8 +197,12 @@
             })
                 .then(r => r.json())
                 .then(data => {
+                    document.getElementById('searchLoading').style.display = 'none';
+
                     if (data.error) {
-                        alert('Search failed: ' + data.error);
+                        const errDiv = document.getElementById('searchError');
+                        errDiv.textContent = 'Search failed: ' + data.error;
+                        errDiv.style.display = 'block';
                         return;
                     }
                     displayTracks(data.tracks || []);
@@ -195,7 +210,13 @@
                         updateVotesRemaining(data.user_votes_used);
                     }
                 })
-                .catch(e => console.error('Error:', e));
+                .catch(e => {
+                    document.getElementById('searchLoading').style.display = 'none';
+                    console.error('Error:', e);
+                    const errDiv = document.getElementById('searchError');
+                    errDiv.textContent = 'Network or Server Error. Please try again.';
+                    errDiv.style.display = 'block';
+                });
         }
 
         function displayTracks(tracks) {
