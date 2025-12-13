@@ -17,8 +17,8 @@
 
         <div class="card-container" style="max-width: 500px; margin: 0 auto;">
             <div style="margin-bottom: 40px;">
-                <button onclick="window.location.href='/admin/login'" style="width: 100%;">
-                    Host Event (Log in with Spotify)
+                <button onclick="hostEvent()" style="width: 100%;">
+                    🔒 Host Event (Password Required)
                 </button>
             </div>
 
@@ -34,6 +34,15 @@
     </div>
 
     <script>
+        function hostEvent() {
+            const password = prompt('Enter host password:');
+            if (password === '1108642#Kota') {
+                window.location.href = '/admin/login';
+            } else if (password !== null) {
+                alert('Incorrect password. Access denied.');
+            }
+        }
+
         function joinEvent() {
             const code = document.getElementById('eventCode').value.trim().toUpperCase();
             if (code) {
