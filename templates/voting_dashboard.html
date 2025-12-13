@@ -83,6 +83,7 @@
 
     <script>
         const eventCode = new URLSearchParams(window.location.search).get('code') || document.location.pathname.split('/').pop();
+        let eventThreshold = 5; // Global variable to store threshold
         document.getElementById('eventCode').textContent = eventCode;
 
         function updateVotesRemaining(used) {
@@ -94,7 +95,7 @@
             fetch(`/api/event/${eventCode}`)
                 .then(r => r.json())
                 .then(data => {
-                    document.getElementById('threshold').textContent = data.threshold;
+                    eventThreshold = data.threshold; // Update global variable
                     document.getElementById('totalVoters').textContent = data.total_voters;
                     updateVotesRemaining(data.user_votes_used);
 
@@ -104,8 +105,8 @@
                             el.textContent = count;
                         });
                         document.querySelectorAll(`.track-item[data-song-id="${songId}"]`).forEach(trackDiv => {
-                            const threshold = parseInt(document.getElementById('threshold').textContent) || 5;
-                            if (count >= threshold) {
+                            // Use global variable instead of DOM
+                            if (count >= eventThreshold) {
                                 // trackDiv.classList.add('threshold-reached'); // Optional: Add styling
                                 const info = trackDiv.querySelector('.track-info');
                                 if (info && !info.querySelector('.threshold-badge')) {
@@ -154,8 +155,8 @@
                 trackDiv.setAttribute('data-song-id', track.id);
 
                 const voteCount = track.votes || 0;
-                const threshold = parseInt(document.getElementById('threshold').textContent) || 5;
-                const isThresholdReached = voteCount >= threshold || (track.is_added === true);
+                // Use global variable
+                const isThresholdReached = voteCount >= eventThreshold || (track.is_added === true);
 
                 trackDiv.innerHTML = `
                     <img src="${track.image}" alt="${track.name}" class="track-image">
@@ -243,8 +244,8 @@
                 trackDiv.setAttribute('data-song-id', track.id);
 
                 const voteCount = track.votes || 0;
-                const threshold = parseInt(document.getElementById('threshold').textContent) || 5;
-                const isThresholdReached = voteCount >= threshold || (track.is_added === true);
+                // Use global variable
+                const isThresholdReached = voteCount >= eventThreshold || (track.is_added === true);
 
                 trackDiv.innerHTML = `
                     <img src="${track.image}" alt="${track.name}" class="track-image">
