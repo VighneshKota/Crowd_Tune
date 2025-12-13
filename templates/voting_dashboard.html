@@ -195,7 +195,13 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ query: query })
             })
-                .then(r => r.json())
+                .then(async r => {
+                    if (!r.ok) {
+                        const text = await r.text();
+                        throw new Error(`Server ${r.status}: ${text.substring(0, 100)}...`);
+                    }
+                    return r.json();
+                })
                 .then(data => {
                     document.getElementById('searchLoading').style.display = 'none';
 
@@ -214,7 +220,7 @@
                     document.getElementById('searchLoading').style.display = 'none';
                     console.error('Error:', e);
                     const errDiv = document.getElementById('searchError');
-                    errDiv.textContent = 'Network or Server Error. Please try again.';
+                    errDiv.textContent = 'Error: ' + e.message;
                     errDiv.style.display = 'block';
                 });
         }
